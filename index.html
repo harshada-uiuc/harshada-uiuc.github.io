@@ -1,7 +1,478 @@
 <!DOCTYPE html>
 <html>
-<body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
+
+<head>
+    <title>Narrative Visualization Project - Summer 2024</title>
+    <!-- Link to favicon -->
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <style>
+        body {
+            background-color: rgb(207, 233, 238);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+
+        .axis text {
+            font-size: 15px;
+        }
+
+        h1 {
+            text-align: center;
+            font-family: sans-serif;
+        }
+
+        p {
+            font-size: 15px;
+            font-family: sans-serif;
+        }
+
+        .annotation-note {
+            font-family: sans-serif;
+            font-size: 13px;
+        }
+
+        button {
+            width: 10em;
+            height: 3em;
+        }
+
+        .legend {
+            font-family: sans-serif;
+            font-size: 15px;
+            cursor: pointer;
+        }
+    </style>
+
+    <!-- Load d3.js -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <!-- Load d3-annotation -->
+    <script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+</head>
+
+<body onload="init1(), init2(), init3()">
+
+    <div style="text-align: center" class="page active" id="page1">
+        <h1>How did the pandemic affect the movie industry?</h1>
+        <h2>Page 1: Box Office Revenue by Year (1995-2021)</h2>
+        <h5>This line chart shows the total box office revenue from 1995 to 2021.</h5>
+        <svg id="svg1"></svg>
+        <div class="tooltip"></div>
+        <script>
+            async function init1() {
+                // Load the data
+                const data = await d3.csv('data/AnnualTicketSales.csv');
+                console.log("Raw data:", data); // Check if data is loaded correctly
+
+                // Parse the data
+                data.forEach(d => {
+                    d.Year = +d.Year; // Convert Year to number
+                    d.Box_Office_Revenue = +d['TOTAL_BOX_OFFICE'].replace(/[\$,]/g, ''); // Remove formatting and convert to number
+                });
+
+                var margin = { top: 50, right: 50, bottom: 150, left: 150 },
+                    width = 1200 - margin.left - margin.right,
+                    height = 800 - margin.top - margin.bottom;
+
+                // Create scales
+                var xs = d3.scaleLinear()
+                    .domain(d3.extent(data, d => d.Year)) // Set domain based on Year
+                    .range([0, width]);
+
+                var ys = d3.scaleLinear()
+                    .domain([0, d3.max(data, d => d.Box_Office_Revenue)]) // Set domain based on Box_Office_Revenue
+                    .nice()
+                    .range([height, 0]);
+
+                var svg = d3.select("#svg1")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+                // Line generator
+                var line = d3.line()
+                    .x(d => xs(d.Year))
+                    .y(d => ys(d.Box_Office_Revenue));
+
+                // Draw the line
+                svg.append("path")
+                    .data([data])
+                    .attr("class", "line")
+                    .attr("d", line)
+                    .attr("fill", "none")
+                    .attr("stroke", "blue")
+                    .attr("stroke-width", 2);
+
+                svg.selectAll("circle")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("cx", d => xs(d.Year))
+                    .attr("cy", d => ys(d.Box_Office_Revenue))
+                    .attr("r", 5)
+                    .attr("fill", "red");
+
+                // Features of the annotation
+                const annotations = [
+                    {
+                        note: {
+                            label: "COVID-19 drastically impacted the movie industry in 2020, causing massive revenue losses due to theater closures and production delays worldwide.",
+                            title: "COVID-19 Pandemic",
+                            wrap: 500,
+                        },
+                        x: 950,
+                        y: 550
+                    }
+                ]
+
+                // Add annotation to the chart
+                const makeAnnotations = d3.annotation()
+                    //.type(d3.annotationCallout)
+                    .type(d3.annotationLabel)
+                    .annotations(annotations)
+
+                // Annotation
+                d3.select("#svg1")
+                    .append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations);
+
+                // X axis
+                svg.append("g")
+                    .attr("class", "axis")
+                    .attr("transform", "translate(0, " + height + ")")
+                    .call(d3.axisBottom(xs)
+                        .tickValues(d3.range(1995, 2022))  // Explicitly set the tick values to show all years
+                        .tickFormat(d3.format("d")))
+                    .selectAll("text")
+                    .attr("transform", "translate(-10, 0)rotate(-30)")
+                    .style("text-anchor", "end");
+
+                // Y axis
+                svg.append("g")
+                    .attr("class", "axis")
+                    .call(d3.axisLeft(ys)
+                        .tickFormat(d => {
+                            if (d >= 1_000_000_000) return (d / 1_000_000_000).toFixed(1) + "B"; // Billions
+                            if (d >= 1_000_000) return (d / 1_000_000).toFixed(1) + "M"; // Millions
+                            return d; // Otherwise, just show the number
+                        }))
+                    .append("text")
+                    .attr("text-anchor", "middle")
+                    .attr("x", -height / 2)
+                    .attr("y", -margin.left + 50)
+                    .attr("transform", "rotate(-90)")
+                    .text("Total Box Office Revenue")
+                    .style("font-family", "sans-serif")
+                    .style("font-size", 20);
+            }
+
+            init1();
+        </script>
+        <p>Revenue dropped sharply from 2019 to 2020 due to the pandemic, but the industry saw a modest recovery in 2021
+            as theaters began to reopen.
+            <br>In the next section, we will delve into the major distributors in the movie industry and analyze their
+            market shares, providing insight into how much each company controls within the industry.
+        </p>
+        <div>
+            <button onclick="change_page(2)">Next Page</button>
+        </div>
+    </div>
+
+    <div style="text-align: center" class="page" id="page2">
+        <h1>How did the pandemic affect the movie industry?</h1>
+        <h2>Page 2: Market Share by Distributors</h2>
+        <h5>This pie chart illustrates the market share of box office revenue held by various distributors from 1995 to
+            2021.</h5>
+        <p>
+            <br>
+            Walt Disney : 17.02%<br>
+            Warner Bros. : 15.25%<br>
+            Sony Pictures : 12.24%<br>
+            Universal : 11.81%<br>
+            20th Century Fox : 10.88%<br>
+            Paramount Pictures : 10.25%<br>
+            Lionsgate : 4.05%<br>
+            New Line : 2.61%<br>
+            Dreamworks SKG : 1.80%<br>
+            Miramax : 1.61%<br>
+        </p>
+        <svg id="svg2"></svg>
+        <script>
+            // Pie Chart Initialization
+            async function init2() {
+                const data = await d3.csv('data/TopDistributors.csv');
+                data.forEach(d => {
+                    d.Market_Share = +d['MARKET_SHARE'].replace('%', '');
+                });
+
+                const margin = { top: 50, right: 50, bottom: 50, left: 50 },
+                    width = 600 - margin.left - margin.right,
+                    height = 600 - margin.top - margin.bottom,
+                    radius = Math.min(width, height) / 2;
+
+                const svg = d3.select("#svg2")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", "translate(" + (width / 2 + margin.left) + "," + (height / 2 + margin.top) + ")");
+
+                const color = d3.scaleOrdinal()
+                    .domain(data.map(d => d.DISTRIBUTORS))
+                    .range(d3.schemeCategory10);
+
+                const pie = d3.pie().value(d => d.Market_Share);
+                const arc = d3.arc().innerRadius(0).outerRadius(radius);
+
+                const arcs = svg.selectAll("arc")
+                    .data(pie(data))
+                    .enter()
+                    .append("g")
+                    .attr("class", "arc");
+
+                arcs.append("path")
+                    .attr("d", arc)
+                    .attr("fill", d => color(d.data.DISTRIBUTORS));
+
+                // Adding Labels to the Pie Chart
+                arcs.append("text")
+                    .attr("transform", function (d) {
+                        const [x, y] = arc.centroid(d); // Get centroid coordinates
+                        const angle = (d.startAngle + d.endAngle) / 2; // Mid angle for the text
+                        const offset = 15; // Distance from the center
+                        return `translate(${x * 1.2},${y * 1.2}) rotate(${angle * 180 / Math.PI - 90})`; // Adjust position and rotation
+                    })
+                    .attr("dy", "0.35em")
+                    .style("text-anchor", "middle")
+                    .style("font-family", "sans-serif")
+                    .style("font-size", "12px")
+                    .text(d => d.data.DISTRIBUTORS, d => d.data);
+
+                // Add annotation to the chart
+                const makeAnnotations = d3.annotation()
+                    .type(d3.annotationLabel)
+                    .annotations(annotations);
+
+                d3.select("#svg2")
+                    .append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations);
+            }
+            init2();
+        </script>
+        <div>
+            <button onclick="change_page(1)">Previous Page</button>
+            <button onclick="change_page(3)">Next Page</button>
+        </div>
+    </div>
+
+    <div style="text-align: center" class="page" id="page3">
+        <h1>How did the pandemic affect the movie industry?</h1>
+        <h2>Page 3: Number of movie releases per year</h2>
+        <h5>We have chosen to display data from only the 6 major distributors.</h5>
+        <p>You can choose the distributor data you want to display by selecting a distributor name from the options
+            below.<br>We maintain the Warner Bros data on the line chart to use it as a benchmark for comparing data
+            from other studios.</p>
+        <!-- Initialize a select button -->
+        <div><select id="selectButton"></select></div>
+        <svg id="svg3"></svg>
+        <script>
+            async function init3() {
+                const data = await d3.csv('data/Releases.csv', d => {
+                    return {
+                        YEAR: +d.YEAR,
+                        DISTRIBUTOR: d.DISTRIBUTOR,
+                        RELEASES: +d.RELEASES
+                    };
+                });
+                console.log(data);
+
+                var margin = { top: 50, right: 150, bottom: 50, left: 150 },
+                    width = 1200 - margin.left - margin.right,
+                    height = 700 - margin.top - margin.bottom;
+
+                var allGroup = [
+                    "Warner Bros.",
+                    "Walt Disney",
+                    "20th Century Fox",
+                    "Paramount Pictures",
+                    "Sony Pictures",
+                    "Universal"
+                ];
+
+                // Add the options to the button
+                d3.select("#selectButton")
+                    .selectAll('myOptions')
+                    .data(allGroup)
+                    .enter()
+                    .append('option')
+                    .text(d => d)
+                    .attr("value", d => d);
+
+                // A color scale: one color for each group
+                var myColor = d3.scaleOrdinal()
+                    .domain(allGroup)
+                    .range(d3.schemeSet2);
+
+                // Define scales
+                var xs = d3.scaleLinear()
+                    .domain([1995, 2021])  // Explicitly setting domain to cover the full range of years
+                    .range([0, width]);
+
+                var ys = d3.scaleLinear()
+                    .domain([0, d3.max(data, d => d.RELEASES)])
+                    .range([height, 0]);
+
+                var svg = d3.select("#svg3")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                var line = d3.line()
+                    .x(d => xs(d.YEAR))
+                    .y(d => ys(d.RELEASES));
+
+                svg.append("g")
+                    .append("path")
+                    .datum(data.filter(d => d.DISTRIBUTOR == allGroup[0]))
+                    .attr("d", line)
+                    .attr("stroke", myColor("Warner Bros."))
+                    .style("stroke-width", 4)
+                    .style("fill", "none");
+
+
+                //Features of the annotation
+                const annotations = [
+                    {
+                        note: {
+                            label: "Note: COVID-19 significantly reduced the number of movie releases in 2020.",
+                            wrap: 2, // Adjust wrap as needed for better fit
+                        },
+                        x: 0, // Adjust x-coordinate based on your chart
+                        y: 0, // Adjust y-coordinate based on your chart
+                        subject: {
+                            radius: 20, // Optional: radius for the subject circle
+                            radiusPadding: 10 // Optional: padding around the subject circle
+                        }
+                    },
+                    {
+                        note: {
+                            label:"In 2021, the numbers began to recover.",
+                            wrap: 2, // Adjust wrap as needed for better fit
+                        },
+                        x: 0, // Adjust x-coordinate based on your chart
+                        y: 13, // Adjust y-coordinate based on your chart
+                        subject: {
+                            radius: 20, // Optional: radius for the subject circle
+                            radiusPadding: 10 // Optional: padding around the subject circle
+                        }
+                    },
+                    {
+                        note: {
+                            label: "Studios adopted tactics such as simultaneous streaming releases and enhanced safety measures, which helped bring audiences back to theaters and boost release numbers.",
+                            wrap: 2, // Adjust wrap as needed for better fit
+                        },
+                        x: 0, // Adjust x-coordinate based on your chart
+                        y: 26, // Adjust y-coordinate based on your chart
+                        subject: {
+                            radius: 20, // Optional: radius for the subject circle
+                            radiusPadding: 10 // Optional: padding around the subject circle
+                        }
+                    }
+                ];
+
+                // Add annotation to the chart
+                const makeAnnotations = d3.annotation()
+                    .type(d3.annotationLabel) // Use d3.annotationCallout if you need an arrow
+                    .annotations(annotations);
+
+                // Append annotation to the SVG element
+                d3.select("#svg3")
+                    .append("g")
+                    .attr("class", "annotation-group")
+                    .call(makeAnnotations);
+
+
+                // X Axis (bottom)
+                svg.append("g")
+                    .attr("class", "axis")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(d3.axisBottom(xs)
+                        .tickValues(d3.range(1995, 2022))  // Explicitly set the tick values to show all years
+                        .tickFormat(d3.format("d"))  // Format ticks as integers
+                    )
+                    .append("text")
+                    .attr("text-anchor", "middle")
+                    .attr("x", width / 2)
+                    .attr("y", 40)
+                    .text("Year")
+                    .style("font-family", "sans-serif")
+                    .style("font-size", 20);
+
+                // Y Axis (left)
+                svg.append("g")
+                    .attr("class", "axis")
+                    .call(d3.axisLeft(ys))
+                    .append("text")
+                    .attr("text-anchor", "middle")
+                    .attr("y", -50)
+                    .attr("x", -height / 2)
+                    .attr("transform", "rotate(-90)")
+                    .text("Releases")
+                    .style("font-family", "sans-serif")
+                    .style("font-size", 20);
+
+                // A function that updates the chart
+                function update(selectedGroup) {
+                    var dataFilter = data.filter(d => d.DISTRIBUTOR == selectedGroup);
+
+                    // Remove the existing line if any
+                    svg.selectAll("path").remove();
+
+                    // Add the new line
+                    svg.append("g")
+                        .append("path")
+                        .datum(dataFilter)
+                        .attr("d", line)
+                        .attr("stroke", myColor(selectedGroup))
+                        .style("stroke-width", 4)
+                        .style("fill", "none");
+                }
+
+                // When the button is changed, run the update function
+                d3.select("#selectButton").on("change", function () {
+                    var selectedOption = d3.select(this).property("value");
+                    update(selectedOption);
+                });
+            }
+
+            init3();
+
+        </script>
+        <p>All of the information used for this data visualization was found on
+            <a href="https://www.kaggle.com/datasets/johnharshith/hollywood-theatrical-market-synopsis-1995-to-2021"
+                target="_blank" rel="noopener noreferrer">here on Kaggle</a>
+        </p>
+        <div>
+            <button onclick="change_page(2)">Previous Page</button>
+            <button onclick="change_page(2)">Back to Page 1!</button>
+        </div>
+    </div>
+
+    <script>
+        function change_page(page) {
+            d3.selectAll('.page').classed('active', false);
+            d3.select('#page' + page).classed('active', true);
+        }
+    </script>
+
 </body>
+
 </html>
