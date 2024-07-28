@@ -65,27 +65,24 @@
         <div class="tooltip"></div>
         <script>
             async function init1() {
-                // Load the data
                 const data = await d3.csv('data/AnnualTicketSales.csv');
-                console.log("Raw data:", data); // Check if data is loaded correctly
+                console.log("Raw data:", data); 
 
-                // Parse the data
                 data.forEach(d => {
-                    d.Year = +d.Year; // Convert Year to number
-                    d.Box_Office_Revenue = +d['TOTAL_BOX_OFFICE'].replace(/[\$,]/g, ''); // Remove formatting and convert to number
+                    d.Year = +d.Year; 
+                    d.Box_Office_Revenue = +d['TOTAL_BOX_OFFICE'].replace(/[\$,]/g, ''); 
                 });
 
                 var margin = { top: 50, right: 50, bottom: 150, left: 150 },
                     width = 1200 - margin.left - margin.right,
                     height = 800 - margin.top - margin.bottom;
 
-                // Create scales
                 var xs = d3.scaleLinear()
-                    .domain(d3.extent(data, d => d.Year)) // Set domain based on Year
+                    .domain(d3.extent(data, d => d.Year)) 
                     .range([0, width]);
 
                 var ys = d3.scaleLinear()
-                    .domain([0, d3.max(data, d => d.Box_Office_Revenue)]) // Set domain based on Box_Office_Revenue
+                    .domain([0, d3.max(data, d => d.Box_Office_Revenue)]) 
                     .nice()
                     .range([height, 0]);
 
@@ -95,12 +92,10 @@
                     .append("g")
                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-                // Line generator
                 var line = d3.line()
                     .x(d => xs(d.Year))
                     .y(d => ys(d.Box_Office_Revenue));
 
-                // Draw the line
                 svg.append("path")
                     .data([data])
                     .attr("class", "line")
@@ -118,7 +113,6 @@
                     .attr("r", 5)
                     .attr("fill", "red");
 
-                // Features of the annotation
                 const annotations = [
                     {
                         note: {
@@ -131,13 +125,10 @@
                     }
                 ]
 
-                // Add annotation to the chart
                 const makeAnnotations = d3.annotation()
-                    //.type(d3.annotationCallout)
                     .type(d3.annotationLabel)
                     .annotations(annotations)
 
-                // Annotation
                 d3.select("#svg1")
                     .append("g")
                     .attr("class", "annotation-group")
@@ -148,7 +139,7 @@
                     .attr("class", "axis")
                     .attr("transform", "translate(0, " + height + ")")
                     .call(d3.axisBottom(xs)
-                        .tickValues(d3.range(1995, 2022))  // Explicitly set the tick values to show all years
+                        .tickValues(d3.range(1995, 2022))  
                         .tickFormat(d3.format("d")))
                     .selectAll("text")
                     .attr("transform", "translate(-10, 0)rotate(-30)")
@@ -159,9 +150,9 @@
                     .attr("class", "axis")
                     .call(d3.axisLeft(ys)
                         .tickFormat(d => {
-                            if (d >= 1_000_000_000) return (d / 1_000_000_000).toFixed(1) + "B"; // Billions
-                            if (d >= 1_000_000) return (d / 1_000_000).toFixed(1) + "M"; // Millions
-                            return d; // Otherwise, just show the number
+                            if (d >= 1_000_000_000) return (d / 1_000_000_000).toFixed(1) + "B"; 
+                            if (d >= 1_000_000) return (d / 1_000_000).toFixed(1) + "M"; 
+                            return d; 
                         }))
                     .append("text")
                     .attr("text-anchor", "middle")
@@ -205,7 +196,6 @@
         </p>
         <svg id="svg2"></svg>
         <script>
-            // Pie Chart Initialization
             async function init2() {
                 const data = await d3.csv('data/TopDistributors.csv');
                 data.forEach(d => {
@@ -240,13 +230,12 @@
                     .attr("d", arc)
                     .attr("fill", d => color(d.data.DISTRIBUTORS));
 
-                // Adding Labels to the Pie Chart
                 arcs.append("text")
                     .attr("transform", function (d) {
-                        const [x, y] = arc.centroid(d); // Get centroid coordinates
-                        const angle = (d.startAngle + d.endAngle) / 2; // Mid angle for the text
-                        const offset = 15; // Distance from the center
-                        return `translate(${x * 1.2},${y * 1.2}) rotate(${angle * 180 / Math.PI - 90})`; // Adjust position and rotation
+                        const [x, y] = arc.centroid(d); 
+                        const angle = (d.startAngle + d.endAngle) / 2; 
+                        const offset = 15; 
+                        return `translate(${x * 1.2},${y * 1.2}) rotate(${angle * 180 / Math.PI - 90})`; 
                     })
                     .attr("dy", "0.35em")
                     .style("text-anchor", "middle")
@@ -254,7 +243,6 @@
                     .style("font-size", "12px")
                     .text(d => d.data.DISTRIBUTORS, d => d.data);
 
-                // Add annotation to the chart
                 const makeAnnotations = d3.annotation()
                     .type(d3.annotationLabel)
                     .annotations(annotations);
@@ -306,7 +294,6 @@
                     "Universal"
                 ];
 
-                // Add the options to the button
                 d3.select("#selectButton")
                     .selectAll('myOptions')
                     .data(allGroup)
@@ -315,14 +302,13 @@
                     .text(d => d)
                     .attr("value", d => d);
 
-                // A color scale: one color for each group
                 var myColor = d3.scaleOrdinal()
                     .domain(allGroup)
                     .range(d3.schemeSet2);
 
-                // Define scales
+
                 var xs = d3.scaleLinear()
-                    .domain([1995, 2021])  // Explicitly setting domain to cover the full range of years
+                    .domain([1995, 2021])  
                     .range([0, width]);
 
                 var ys = d3.scaleLinear()
@@ -348,65 +334,60 @@
                     .style("fill", "none");
 
 
-                //Features of the annotation
                 const annotations = [
                     {
                         note: {
                             label: "Note: COVID-19 significantly reduced the number of movie releases in 2020.",
-                            wrap: 2, // Adjust wrap as needed for better fit
+                            wrap: 2, 
                         },
-                        x: 0, // Adjust x-coordinate based on your chart
-                        y: 0, // Adjust y-coordinate based on your chart
+                        x: 0, 
+                        y: 0, 
                         subject: {
-                            radius: 20, // Optional: radius for the subject circle
-                            radiusPadding: 10 // Optional: padding around the subject circle
+                            radius: 20, 
+                            radiusPadding: 10 
                         }
                     },
                     {
                         note: {
                             label:"In 2021, the numbers began to recover.",
-                            wrap: 2, // Adjust wrap as needed for better fit
+                            wrap: 2, 
                         },
-                        x: 0, // Adjust x-coordinate based on your chart
-                        y: 13, // Adjust y-coordinate based on your chart
+                        x: 0, 
+                        y: 13, 
                         subject: {
-                            radius: 20, // Optional: radius for the subject circle
-                            radiusPadding: 10 // Optional: padding around the subject circle
+                            radius: 20, 
+                            radiusPadding: 10 
                         }
                     },
                     {
                         note: {
                             label: "Studios adopted tactics such as simultaneous streaming releases and enhanced safety measures, which helped bring audiences back to theaters and boost release numbers.",
-                            wrap: 2, // Adjust wrap as needed for better fit
+                            wrap: 2, 
                         },
-                        x: 0, // Adjust x-coordinate based on your chart
-                        y: 26, // Adjust y-coordinate based on your chart
+                        x: 0, 
+                        y: 26, 
                         subject: {
-                            radius: 20, // Optional: radius for the subject circle
-                            radiusPadding: 10 // Optional: padding around the subject circle
+                            radius: 20, 
+                            radiusPadding: 10 
                         }
                     }
                 ];
 
-                // Add annotation to the chart
                 const makeAnnotations = d3.annotation()
-                    .type(d3.annotationLabel) // Use d3.annotationCallout if you need an arrow
+                    .type(d3.annotationLabel) 
                     .annotations(annotations);
 
-                // Append annotation to the SVG element
                 d3.select("#svg3")
                     .append("g")
                     .attr("class", "annotation-group")
                     .call(makeAnnotations);
 
-
-                // X Axis (bottom)
                 svg.append("g")
                     .attr("class", "axis")
                     .attr("transform", `translate(0,${height})`)
                     .call(d3.axisBottom(xs)
-                        .tickValues(d3.range(1995, 2022))  // Explicitly set the tick values to show all years
-                        .tickFormat(d3.format("d"))  // Format ticks as integers
+                        .tickValues(d3.range(1995, 2022))  
+                        .tickFormat(d3.format("d"))  
                     )
                     .append("text")
                     .attr("text-anchor", "middle")
@@ -416,7 +397,6 @@
                     .style("font-family", "sans-serif")
                     .style("font-size", 20);
 
-                // Y Axis (left)
                 svg.append("g")
                     .attr("class", "axis")
                     .call(d3.axisLeft(ys))
@@ -429,14 +409,11 @@
                     .style("font-family", "sans-serif")
                     .style("font-size", 20);
 
-                // A function that updates the chart
                 function update(selectedGroup) {
                     var dataFilter = data.filter(d => d.DISTRIBUTOR == selectedGroup);
 
-                    // Remove the existing line if any
                     svg.selectAll("path").remove();
 
-                    // Add the new line
                     svg.append("g")
                         .append("path")
                         .datum(dataFilter)
@@ -446,7 +423,6 @@
                         .style("fill", "none");
                 }
 
-                // When the button is changed, run the update function
                 d3.select("#selectButton").on("change", function () {
                     var selectedOption = d3.select(this).property("value");
                     update(selectedOption);
@@ -462,7 +438,7 @@
         </p>
         <div>
             <button onclick="change_page(2)">Previous Page</button>
-            <button onclick="change_page(2)">Back to Page 1!</button>
+            <button onclick="change_page(1)">Back to Page 1!</button>
         </div>
     </div>
 
